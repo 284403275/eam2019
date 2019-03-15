@@ -1,0 +1,85 @@
+SELECT
+    to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'YYYY') AS "year"
+    ,to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'Q') AS "q"
+    --,AUFK.AUART AS "type"
+    ,ILOA.TPLNR AS "system"
+	,SUM(CASE WHEN AUFK.AUART = '8F01' THEN CASE AFRU.STOKZ WHEN 'X' THEN AFRU.ISMNW * -1 ELSE AFRU.ISMNW END ELSE 0 END) AS "cm"
+    ,SUM(CASE WHEN AUFK.AUART = '8F02' THEN CASE AFRU.STOKZ WHEN 'X' THEN AFRU.ISMNW * -1 ELSE AFRU.ISMNW END ELSE 0 END) AS "pm"
+
+    --,to_char(to_date(AFRU.IEDD, 'YYYYMMDD'), 'Q') AS "quarter"
+    /*
+    ,CASE AUFK.VAPLZ
+            WHEN 'TAB_P' THEN 'FMT'
+            WHEN 'FMG_P' THEN 'FMT'
+            WHEN 'MIC_P' THEN 'CMT'
+            WHEN 'IC' THEN 'IC'
+            WHEN 'WTR_P' THEN 'UPW/WWT'
+            WHEN 'ELEC_P' THEN 'ELEC'
+            WHEN 'GAS_P' THEN 'GAS'
+            WHEN 'CHEM_P' THEN 'CHEM'
+            WHEN 'SLUR_P' THEN 'SLURRY'
+            WHEN 'ALOP_P' THEN 'AL OP'
+            WHEN 'TGM' THEN 'TGM'
+            WHEN 'BS' THEN 'BS'
+            ELSE 'Unknown'
+        END AS "work_center"
+        */
+    --,AFIH.ILART
+    --,T353I_T.ILATX AS "activity_type"
+    
+FROM AFRU
+JOIN AFVC ON AFVC.RUECK = AFRU.RUECK
+JOIN AFKO ON AFKO.AUFPL = AFVC.AUFPL
+JOIN AUFK ON AUFK.AUFNR = AFKO.AUFNR
+JOIN AFIH ON AFIH.AUFNR = AUFK.AUFNR
+JOIN AFVV ON AFVV.AUFPL = AFVC.AUFPL AND AFVV.APLZL = AFVC.APLZL
+FULL OUTER JOIN ILOA ON ILOA.ILOAN = AFIH.ILOAN
+
+--JOIN CRHD ON CRHD.OBJID = AFRU.ARBID
+--JOIN T353I_T ON T353I_T.ILART = AFIH.ILART
+
+WHERE AFRU.IEDD BETWEEN '20180304' AND '20190310'
+--AND ILOA.TPLNR = '81F-FB-MUA0'
+AND AUFK.AUART IN ('8F01', '8F02')
+--AND AUFK.AUART IN ('8F01', '8F02', '8F03', '8F06')
+--AND AUFK.AUART IN ('8F01')
+AND AUFK.VAPLZ IN ('MIC_P', 'FMG_P', 'ELEC_P', 'WTR_P', 'IC', 'TAB_P')
+--AND T353I_T.ILATX = 'Rounds and Readings'
+
+GROUP BY 
+/*
+CASE AUFK.VAPLZ
+            WHEN 'TAB_P' THEN 'FMT'
+            WHEN 'FMG_P' THEN 'FMT'
+            WHEN 'MIC_P' THEN 'CMT'
+            WHEN 'IC' THEN 'IC'
+            WHEN 'WTR_P' THEN 'UPW/WWT'
+            WHEN 'ELEC_P' THEN 'ELEC'
+            WHEN 'GAS_P' THEN 'GAS'
+            WHEN 'CHEM_P' THEN 'CHEM'
+            WHEN 'SLUR_P' THEN 'SLURRY'
+            WHEN 'ALOP_P' THEN 'AL OP'
+            WHEN 'TGM' THEN 'TGM'
+            WHEN 'BS' THEN 'BS'
+            ELSE 'Unknown'
+        END
+        */
+--,T353I_T.ILATX
+--,AUFK.AUART--, T353I_T.ILATX, AFIH.ILART
+to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'Q')
+,to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'YYYY')
+,ILOA.TPLNR
+--,to_char(to_date(AFRU.IEDD, 'YYYYMMDD'), 'Q')
+order by --to_char(to_date(AFRU.IEDD, 'YYYYMMDD'), 'Q')
+to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'YYYY')
+,to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'Q')
+
+--order by to_char(to_date(AFRU.ERSDA, 'YYYYMMDD'), 'IW')
+
+--order BY SUM(CASE AFRU.STOKZ WHEN 'X' THEN AFRU.ISMNW * -1 ELSE AFRU.ISMNW END) desc
+
+--AND AFIH.WARPL = '100000002299' AND AFIH.WAPOS = '0000000000004710'
+--AND AFIH.AUFNR = '00080036'
+--AND CRHD.ARBPL = 'ELEC_P'
+--AND AFRU.IEDD != AFRU.ERSDA
+;

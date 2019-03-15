@@ -1,0 +1,67 @@
+SELECT DISTINCT
+    AFIH.AUFNR AS "order"
+    ,AUFK.AUART AS "order_type"
+    ,ILOA.EQFNR AS "tag_id"
+    ,AUFK.KTEXT AS "description"
+    ,AUFK.VAPLZ AS "main_work_center"
+    ,CRHD.ARBPL AS "op_work_center"
+    ,MAX(AFVV.DAUNO) OVER (PARTITION BY AFIH.AUFNR || CRHD.ARBPL) AS "duration"
+    ,SUM(AFVV.ISMNW) OVER (PARTITION BY AFIH.AUFNR) AS "actual_work"
+    ,AFKO.GSTRP AS "basic_start_date"
+    ,AFKO.GSUZP AS "basic_start_time"
+    ,CASE WHEN A.NPLDA != '00000000' THEN to_number(to_char(to_date(A.NPLDA ,'YYYYMMDD') - CASE WHEN A."cycle" <= 7 THEN 3 ELSE CEIL(A."cycle" * .1) END, 'YYYYMMDD')) ELSE NULL END AS "window_start"
+    ,to_number(A.NPLDA) AS "planned_date"
+    ,CASE WHEN A.NPLDA != '00000000' THEN to_number(to_char(to_date(A.NPLDA ,'YYYYMMDD') + CASE WHEN A."cycle" <= 7 THEN 3 ELSE CEIL(A."cycle" * .1) END, 'YYYYMMDD')) ELSE NULL END AS "window_end"
+    ,AUFK.ZZ_COMPLSTART_DATE AS "compliance_start"
+    ,AUFK.ZZ_COMPLEND_DATE AS "compliance_end"
+    ,AFIH.WARPL AS "maintenance_plan"
+    ,AFIH.ABNUM AS "call_number"
+    , (
+        SELECT
+			LISTAGG(IHPA.PARNR, ',') WITHIN GROUP (ORDER BY IHPA.PARNR)
+		FROM IHPA
+		WHERE IHPA.OBJNR = AUFK.OBJNR AND IHPA.KZLOESCH != 'X'
+    ) AS "partners"
+    , (
+        SELECT
+			LISTAGG(TJ30T.TXT04, ' ') WITHIN GROUP (ORDER BY TJ30T.TXT04)
+		FROM JEST
+		JOIN JSTO ON JSTO.OBJNR = JEST.OBJNR
+		JOIN TJ30T ON JSTO.STSMA = TJ30T.STSMA AND JEST.STAT = TJ30T.ESTAT
+		WHERE JEST.OBJNR = AUFK.OBJNR AND JEST.INACT != 'X' AND TJ30T.SPRAS = 'E'
+    ) AS "user_status"
+    ,(
+        SELECT
+			LISTAGG(TJ02T.TXT04, ' ') WITHIN GROUP (ORDER BY TJ02T.TXT04)
+		FROM JEST
+		JOIN TJ02T ON JEST.STAT = TJ02T.ISTAT
+		WHERE JEST.OBJNR = AUFK.OBJNR AND JEST.INACT != 'X' AND TJ02T.SPRAS = 'E'
+    ) AS "system_status"
+    , CASE WHEN AUFK.VAPLZ = CRHD.ARBPL THEN 1 ELSE 0 END AS "can_edit"
+    
+FROM AFIH
+
+    JOIN AFKO ON AFKO.AUFNR = AFIH.AUFNR
+    JOIN AUFK ON AUFK.AUFNR = AFIH.AUFNR
+    JOIN AFVC ON AFVC.AUFPL = AFKO.AUFPL
+    JOIN AFVV ON AFVV.AUFPL = AFVC.AUFPL AND AFVV.APLZL = AFVC.APLZL
+    JOIN ILOA ON ILOA.ILOAN = AFIH.ILOAN
+    JOIN CRHD ON CRHD.OBJID = AFVC.ARBID
+    
+    
+    FULL OUTER JOIN (
+        SELECT
+            WARPL
+            ,NPLDA
+            ,ABNUM
+            ,MAX(ROUND(ZYKZT / 3600 / 24, 2)) AS "cycle"
+        FROM MHIS
+        GROUP BY WARPL, NPLDA, ABNUM
+    ) A ON A.WARPL = AFIH.WARPL AND A.ABNUM = AFIH.ABNUM
+
+    
+    WHERE AFKO.GSTRP BETWEEN '20180930' and '20181006'
+    AND AUFK.AUART IN ('8F03','8F02','8F01')
+    --AND AFIH.AUFNR = '000800276338'
+    --order by AFIH.AUFNR
+    ;

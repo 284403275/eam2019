@@ -1,0 +1,60 @@
+SELECT
+    AUFK.AUFNR AS "order"
+    ,AUFK.ZZ_COMPLSTART_DATE AS "comp_start"
+    ,AUFK.ZZ_COMPLEND_DATE AS "comp_end"
+    ,AFIH.WARPL AS "maintenance_plan"
+    ,AFIH.ABNUM AS "call_no"
+    ,AFIH.WAPOS AS "maint_item"
+    ,AFIH.BAUTL AS "assembly"
+    ,MHIS.NPLDA AS "planned_date"
+    ,MHIS.ZAEHL AS "package_no"
+    ,MPOS.BAUTL AS "assembly_mp"
+    ,AUFK.PHAS2 AS "complete"
+    ,CABN.ATNAM AS "classification_name"
+    ,CAWN.ATWRT AS "value"
+
+FROM AUFK
+
+JOIN AFIH ON AFIH.AUFNR = AUFK.AUFNR
+JOIN MPOS ON MPOS.WAPOS = AFIH.WAPOS
+JOIN MHIS ON MHIS.WARPL = AFIH.WARPL AND MHIS.ABNUM = AFIH.ABNUM
+JOIN AUSP ON AUSP.OBJEK = AFIH.BAUTL
+JOIN CABN ON CABN.ATINN = AUSP.ATINN
+FULL OUTER JOIN CAWN ON CAWN.ATINN = CABN.ATINN
+
+WHERE
+
+--Query particular order numbers
+--AUFK.AUFNR IN ()
+
+--Query particular order type
+-- AND AUFK.AUART IN ()
+
+--Query for particular plant
+AUFK.WERKS = '8000'
+
+--Query for a work center
+-- AND AUFK.VAPLZ IN ()
+
+--Query by planned date
+--AND MHIS.NPLDA IN ()
+
+AND NOT EXISTS (
+    SELECT * FROM JEST
+    WHERE (JEST.STAT = 'I0009' AND JEST.INACT != 'X') AND AUFK.OBJNR = JEST.OBJNR
+)
+
+AND NOT EXISTS (
+    SELECT * FROM JEST
+    WHERE (JEST.STAT = 'I0045' AND JEST.INACT != 'X') AND AUFK.OBJNR = JEST.OBJNR
+)
+
+AND NOT EXISTS (
+    SELECT * FROM JEST
+    WHERE (JEST.STAT = 'I0046' AND JEST.INACT != 'X') AND AUFK.OBJNR = JEST.OBJNR
+)
+
+--BELOW HERE IS FOR TESTING
+AND AFIH.WARPL = '100000003037'
+
+;
