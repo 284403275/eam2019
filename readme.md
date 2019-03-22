@@ -6,7 +6,7 @@ This repository contains the files I use to pull reports and build an interactiv
 
 ## Open Source
 
-This is the full application. For obvious reasons I couldn't open source the entire project, but these core files are what I use to build the API I presented as well as the queries I use inside and outside of the application. You will find comments and other items as this is not a formal commercial product.
+This is not the full application. For obvious reasons I couldn't open source the entire project, but these core files are what I use to build the API I presented as well as the queries I use inside and outside of the application. You will find comments and other items as this is not a formal commercial product.
 
 **USE AT YOUR OWN RISK**
 
